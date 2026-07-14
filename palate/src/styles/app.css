@@ -1,0 +1,24 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin:0;
+
+    font-family:
+    Inter,
+    Arial,
+    sans-serif;
+
+    background:#f7f7f7;
+
+}
+
+
+button {
+
+    cursor:pointer;
+
+}

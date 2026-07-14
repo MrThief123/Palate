@@ -1,0 +1,19 @@
+.swipe-container {
+  width: 380px;
+  height: 500px;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swipe-card {
+  position: absolute;
+  cursor: grab;
+  transition: transform 0.3s ease;
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}

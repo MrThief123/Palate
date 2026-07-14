@@ -1,32 +1,93 @@
 import type { Recipe } from "../types/recipe";
 
-interface Props {
-  recipe: Recipe;
+import "../styles/recipe-card.css";
+
+
+interface Props{
+
+    recipe:Recipe;
+
 }
 
-export default function RecipeCard({ recipe }: Props) {
-  return (
-    <div className="bg-white rounded-3xl shadow-xl p-8 w-96 h-[450px]">
-      <h1 className="text-3xl font-bold">
-        {recipe.name}
-      </h1>
 
-      <p className="mt-3">{recipe.cuisine}</p>
+export default function RecipeCard({
+    recipe
+}:Props){
 
-      <p>⏱ {recipe.cookTime} minutes</p>
 
-      <p>Difficulty: {recipe.difficulty}</p>
+return (
 
-      <p className="mt-5">{recipe.description}</p>
+<div className="recipe-card">
 
-      <div className="mt-5">
-        Ingredients:
-        <ul>
-          {recipe.ingredients.map((i) => (
-            <li key={i}>• {i}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
+
+<h1 className="recipe-title">
+
+{recipe.name}
+
+</h1>
+
+
+<div className="recipe-meta">
+
+{recipe.cuisine}
+
+<br/>
+
+⏱ {recipe.cookTime} minutes
+
+<br/>
+
+Difficulty:
+{recipe.difficulty}
+
+</div>
+
+
+
+<p className="recipe-description">
+
+{recipe.description}
+
+</p>
+
+
+
+<div className="recipe-section">
+
+<h3>
+Ingredients
+</h3>
+
+
+<ul>
+
+{
+recipe.ingredients.map(
+ingredient=>(
+
+<li key={ingredient}>
+
+{ingredient}
+
+</li>
+
+))
+}
+
+</ul>
+
+</div>
+
+
+<div className="recipe-hint">
+
+← Skip &nbsp;&nbsp; ❤️ Cook →
+
+</div>
+
+
+</div>
+
+)
+
 }
