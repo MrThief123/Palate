@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src", "../backend/src/server.js", "../backend/src/ap../backend/src/configd/co../backend/src/routesd/routes"]
 }

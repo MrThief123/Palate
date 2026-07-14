@@ -1,0 +1,41 @@
+.login-page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-content {
+  text-align: center;
+}
+
+.login-title {
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+  color: #555;
+}
+
+.login-button {
+  margin-top: 2.5rem;
+  background: black;
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 0.75rem;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.login-button:hover {
+  opacity: 0.85;
+}
+
+.login-button:active {
+  transform: scale(0.97);
+}

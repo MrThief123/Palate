@@ -1,64 +1,28 @@
 import { useNavigate } from "react-router-dom";
+import "../styles/login.css";
+import { loginWithGoogle } from "../api/auth";
 
+export default function Login() {
+  const navigate = useNavigate();
 
-export default function Login(){
+  return (
+    <div className="login-page">
+      <div className="login-content">
+        <h1 className="login-title">
+          🍴 Palate
+        </h1>
 
-const navigate = useNavigate();
+        <p className="login-subtitle">
+          Your AI cooking companion
+        </p>
 
-
-return (
-
-<div className="
-h-screen
-flex
-items-center
-justify-center
-">
-
-
-<div className="
-text-center
-">
-
-
-<h1 className="
-text-5xl
-font-bold
-">
-🍴 Palate
-</h1>
-
-
-<p className="mt-5">
-Your AI cooking companion
-</p>
-
-
-<button
-
-onClick={()=>
-navigate("/onboarding")
-}
-
-className="
-mt-10
-bg-black
-text-white
-px-8
-py-3
-rounded-xl
-">
-
-Continue
-
-</button>
-
-
-</div>
-
-
-</div>
-
-)
-
+        <button
+          className="login-button"
+          onClick={loginWithGoogle}
+        >
+          Continue with Google
+        </button>
+      </div>
+    </div>
+  );
 }
