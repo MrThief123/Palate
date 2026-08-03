@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import session from "express-session";
 import passport from "./config/passport.js";
+import preferenceRoutes from "./routes/preferences.js";
 
 import authRoutes from "./routes/auth.js";
 
@@ -12,8 +13,10 @@ const app = express();
 // Allow frontend to communicate with backend
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
+    origin:[
+      "http://localhost:5173"
+    ],
+    credentials:true
   })
 );
 
@@ -27,6 +30,7 @@ app.use(
 // Configure user sessions
 app.use(
   session({
+
     secret: process.env.SESSION_SECRET,
 
     resave: false,
@@ -34,8 +38,15 @@ app.use(
     saveUninitialized: false,
 
     cookie: {
-      secure: false, // Set true when using HTTPS in production
-    },
+
+      secure: false,
+
+      httpOnly: true,
+
+      maxAge: 1000 * 60 * 60 * 24
+
+    }
+
   })
 );
 
@@ -51,6 +62,14 @@ app.use(
   passport.session()
 );
 
+app.use((req,res,next)=>{
+
+  console.log("SESSION USER:", req.user);
+
+  next();
+
+});
+
 
 // Authentication routes
 app.use(
@@ -65,6 +84,11 @@ app.get(
   (req, res) => {
     res.send("Palate API running");
   }
+);
+
+app.use(
+  "/preferences",
+  preferenceRoutes
 );
 
 
