@@ -1,24 +1,249 @@
+/* ================================
+   Global reset
+================================ */
+
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 
 body {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  background: #f7f5f0;
+}
 
-    margin:0;
 
-    font-family:
-    Inter,
-    Arial,
-    sans-serif;
 
-    background:#f7f7f7;
+/* ================================
+   Onboarding Page Background
+================================ */
+
+.onboarding-page {
+
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
 
 }
 
 
-button {
 
-    cursor:pointer;
+/* ================================
+   Card Container
+================================ */
+
+.onboarding-card {
+
+  background: white;
+
+  width: 100%;
+  max-width: 500px;
+
+  padding: 40px;
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.08);
+
+}
+
+
+
+/* ================================
+   Heading
+================================ */
+
+.onboarding-card h1 {
+
+  margin: 0;
+
+  font-size: 32px;
+
+  text-align: center;
+
+  color: #222;
+
+}
+
+
+
+.onboarding-card p {
+
+  text-align: center;
+
+  color: #666;
+
+  margin-top: 10px;
+
+  margin-bottom: 30px;
+
+}
+
+
+
+/* ================================
+   Form
+================================ */
+
+.onboarding-card form {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+}
+
+
+
+/* ================================
+   Labels
+================================ */
+
+.onboarding-card label {
+
+  font-weight: 600;
+
+  color: #333;
+
+  margin-top: 10px;
+
+}
+
+
+
+/* ================================
+   Inputs + Selects
+================================ */
+
+.onboarding-card input,
+.onboarding-card select {
+
+
+  width: 100%;
+
+  padding: 13px 15px;
+
+
+  border-radius: 10px;
+
+  border: 1px solid #ddd;
+
+
+  font-size: 15px;
+
+  background: white;
+
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
+}
+
+
+
+.onboarding-card input:focus,
+.onboarding-card select:focus {
+
+  outline: none;
+
+  border-color: #ff7a18;
+
+  box-shadow:
+    0 0 0 3px rgba(255,122,24,0.15);
+
+}
+
+
+
+/* ================================
+   Submit Button
+================================ */
+
+.onboarding-card button {
+
+
+  margin-top: 25px;
+
+
+  padding: 14px;
+
+
+  border: none;
+
+
+  border-radius: 12px;
+
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff7a18,
+      #ffb347
+    );
+
+
+  color: white;
+
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+
+  cursor: pointer;
+
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+}
+
+
+
+.onboarding-card button:hover {
+
+
+  transform: translateY(-2px);
+
+
+  box-shadow:
+    0 8px 20px rgba(255,122,24,0.25);
+
+}
+
+
+
+/* ================================
+   Mobile Responsive
+================================ */
+
+@media(max-width:600px){
+
+
+  .onboarding-card {
+
+    padding: 25px;
+
+    border-radius: 15px;
+
+  }
+
+
+  .onboarding-card h1 {
+
+    font-size: 26px;
+
+  }
+
 
 }
