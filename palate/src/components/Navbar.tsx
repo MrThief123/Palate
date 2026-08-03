@@ -8,9 +8,9 @@ export default function Navbar() {
     console.log("LOGOUT_CLICKED");
 
     // Later:
-    // clear auth token
-    // clear user context
-    // call backend logout
+    // Call backend logout endpoint
+    // Clear user state
+    // Destroy session
 
     navigate("/");
   }
@@ -22,14 +22,17 @@ export default function Navbar() {
       </h1>
 
       <div className="navbar-links">
+        {/* Main recipe discovery page */}
         <Link to="/discover">
           Discover
         </Link>
 
+        {/* Allows users to change their food preferences */}
         <Link to="/onboarding">
-          Profile
+          Update Preferences
         </Link>
 
+        {/* Logs the user out */}
         <button
           onClick={handleLogout}
           className="logout-button"

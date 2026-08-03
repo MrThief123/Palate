@@ -6,9 +6,7 @@ export default function Feedback() {
 
   return (
     <div className="max-w-xl mx-auto p-10">
-      <h1 className="text-3xl font-bold">
-        How was it?
-      </h1>
+      <h1 className="text-3xl font-bold">How was it?</h1>
 
       <textarea
         className="border w-full mt-5 p-3"

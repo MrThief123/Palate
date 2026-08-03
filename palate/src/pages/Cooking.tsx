@@ -9,31 +9,21 @@ export default function Cooking() {
 
   return (
     <div className="p-10 max-w-xl mx-auto">
-      <h1 className="text-4xl font-bold">
-        {recipe?.name}
-      </h1>
+      <h1 className="text-4xl font-bold">{recipe?.name}</h1>
 
-      <h2 className="text-xl mt-5">
-        Ingredients
-      </h2>
+      <h2 className="text-xl mt-5">Ingredients</h2>
 
       <ul>
         {recipe?.ingredients.map((i) => (
-          <li key={i}>
-            {i}
-          </li>
+          <li key={i}>{i}</li>
         ))}
       </ul>
 
-      <h2 className="text-xl mt-5">
-        Instructions
-      </h2>
+      <h2 className="text-xl mt-5">Instructions</h2>
 
       <ol>
         {recipe?.instructions.map((i) => (
-          <li key={i}>
-            {i}
-          </li>
+          <li key={i}>{i}</li>
         ))}
       </ol>
 
