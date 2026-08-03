@@ -1,5 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
+import pool from "../config/database.js";
 
 const router = Router();
 
@@ -25,12 +26,77 @@ router.get(
     failureRedirect: `${process.env.FRONTEND_URL}/`,
   }),
 
-  (req, res) => {
-    console.log("LOGGED IN USER:");
-    console.log(req.user);
+  async (req, res) => {
 
-    // Redirect user to frontend after successful login
-    res.redirect(`${process.env.FRONTEND_URL}/onboarding`);
+    const user = req.user;
+
+
+    const existingUser = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE google_id = $1
+      `,
+      [user.googleId]
+    );
+
+
+    let userId;
+
+
+    if (existingUser.rows.length === 0) {
+
+      const result = await pool.query(
+        `
+        INSERT INTO users
+        (google_id, name, email, photo)
+        VALUES ($1,$2,$3,$4)
+        RETURNING id
+        `,
+        [
+          user.googleId,
+          user.name,
+          user.email,
+          user.photo
+        ]
+      );
+
+      userId = result.rows[0].id;
+
+
+      res.redirect(
+        `${process.env.FRONTEND_URL}/Onboarding`
+      );
+
+    } else {
+
+      userId = existingUser.rows[0].id;
+
+
+      const preferences = await pool.query(
+        `
+        SELECT user_id
+        FROM preferences
+        WHERE user_id=$1
+        `,
+        [userId]
+      );
+
+
+      if(preferences.rows.length === 0){
+
+        res.redirect(
+          `${process.env.FRONTEND_URL}/Onboarding`
+        );
+
+      } else {
+
+        res.redirect(
+          `${process.env.FRONTEND_URL}/discover`
+        );
+
+      }
+    }
   }
 );
 
