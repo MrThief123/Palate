@@ -3,7 +3,6 @@ import "dotenv/config";
 
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
-
 // Configure Google OAuth strategy
 passport.use(
   new GoogleStrategy(
@@ -27,21 +26,18 @@ passport.use(
 
       // Pass user data to Passport
       return done(null, user);
-    }
-  )
+    },
+  ),
 );
-
 
 // Store user data in session
 passport.serializeUser((user, done) => {
   done(null, user);
 });
 
-
 // Retrieve user data from session
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
-
 
 export default passport;

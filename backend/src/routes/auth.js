@@ -5,7 +5,6 @@ import pool from "../config/database.js";
 // Create an Express router for authentication-related routes
 const router = Router();
 
-
 // GOOGLE LOGIN START ROUTE
 // This route starts the Google OAuth login process.
 // When the user visits /auth/google, they are redirected
@@ -15,15 +14,10 @@ const router = Router();
 router.get(
   "/google",
   passport.authenticate("google", {
-    scope: [
-      "profile",
-      "email",
-    ],
-    session: true
-  })
+    scope: ["profile", "email"],
+    session: true,
+  }),
 );
-
-
 
 // GOOGLE LOGIN CALLBACK ROUTE
 // Google redirects the user back to this route after
@@ -43,7 +37,6 @@ router.get(
     failureRedirect: `${process.env.FRONTEND_URL}/`,
   }),
 
-
   async (req, res) => {
     // Passport attaches the authenticated Google user
     // information to req.user
@@ -57,14 +50,13 @@ router.get(
       FROM users
       WHERE google_id = $1
       `,
-      [user.googleId]
+      [user.googleId],
     );
-
 
     let userId;
 
     // NEW USER REGISTRATION
-    
+
     // If no user exists with this Google ID,
     // create a new account.
     if (existingUser.rows.length === 0) {
@@ -77,26 +69,21 @@ router.get(
         `,
         [
           user.googleId, // Unique Google account ID
-          user.name,     // User's Google display name
-          user.email,    // User's Google email
-          user.photo     // Profile picture URL
-        ]
+          user.name, // User's Google display name
+          user.email, // User's Google email
+          user.photo, // Profile picture URL
+        ],
       );
-
 
       // Store the newly created user's database ID
       userId = result.rows[0].id;
 
       // New users need to complete onboarding
       // (diet preferences, allergies, cooking skills, etc.)
-      res.redirect(
-        `${process.env.FRONTEND_URL}/Onboarding`
-      );
-    } 
-    
-    
+      res.redirect(`${process.env.FRONTEND_URL}/Onboarding`);
+    }
+
     // EXISTING USER LOGIN
-    
     else {
       // Get the existing user's database ID
       userId = existingUser.rows[0].id;
@@ -109,36 +96,23 @@ router.get(
         FROM preferences
         WHERE user_id=$1
         `,
-        [userId]
+        [userId],
       );
-
-
 
       // If no preferences exist, the user has not
       // completed onboarding yet
-      if(preferences.rows.length === 0){
+      if (preferences.rows.length === 0) {
+        res.redirect(`${process.env.FRONTEND_URL}/Onboarding`);
+      }
 
-        res.redirect(
-          `${process.env.FRONTEND_URL}/Onboarding`
-        );
-
-
-      } 
-      
       // If preferences exist, the user has already
       // completed setup and can access the app
       else {
-        res.redirect(
-          `${process.env.FRONTEND_URL}/discover`
-        );
-
+        res.redirect(`${process.env.FRONTEND_URL}/discover`);
       }
     }
-  }
+  },
 );
-
-
-
 
 // GET CURRENT USER ROUTE
 
@@ -154,15 +128,9 @@ router.get(
 // }
 //
 // or null if nobody is logged in.
-router.get(
-  "/current",
-  (req, res) => {
-    res.json(req.user || null);
-  }
-);
-
-
-
+router.get("/current", (req, res) => {
+  res.json(req.user || null);
+});
 
 // LOGOUT ROUTE
 
@@ -177,9 +145,8 @@ router.get(
 
     // Redirect user back to frontend after logout
     res.redirect(process.env.FRONTEND_URL);
-  }
+  },
 );
-
 
 // Export router so it can be used in server.js
 export default router;
