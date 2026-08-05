@@ -4,7 +4,6 @@ import pool from "../config/database.js";
 // Create router for preference-related endpoints
 const router = Router();
 
-
 // ============================================
 // SAVE USER PREFERENCES
 // POST /preferences
@@ -23,7 +22,6 @@ const router = Router();
 // ============================================
 
 router.post("/", async (req, res) => {
-
   try {
     // Debug: View data sent from frontend
     console.log("REQUEST BODY:");
@@ -39,9 +37,8 @@ router.post("/", async (req, res) => {
     // req.user will be undefined.
     if (!req.user) {
       return res.status(401).json({
-        message: "Not authenticated"
+        message: "Not authenticated",
       });
-
     }
 
     // Find the user's UUID from our database
@@ -54,25 +51,20 @@ router.post("/", async (req, res) => {
     // users.id -> UUID
     //
     const userResult = await pool.query(
-
       `
       SELECT id
       FROM users
       WHERE google_id = $1
       `,
 
-      [
-        req.user.googleId
-      ]
-
+      [req.user.googleId],
     );
-
 
     // If the Google account exists in Passport
     // but not in our database, return an error.
     if (userResult.rows.length === 0) {
       return res.status(404).json({
-        message:"User not found"
+        message: "User not found",
       });
     }
 
@@ -81,10 +73,7 @@ router.post("/", async (req, res) => {
 
     // Extract onboarding information sent
     // from the React frontend.
-    const {
-      diet, cuisines, allergies, cookingSkill, cookingTime
-    } = req.body;
-
+    const { diet, cuisines, allergies, cookingSkill, cookingTime } = req.body;
 
     // Insert user preferences into database.
     //
@@ -96,10 +85,8 @@ router.post("/", async (req, res) => {
     // This allows users to change their preferences
     // later from a settings page.
     await pool.query(
-
       `
       INSERT INTO preferences
-
       (
         user_id,
         diet,
@@ -109,30 +96,19 @@ router.post("/", async (req, res) => {
         cooking_time
       )
 
-
       VALUES
 
       ($1,$2,$3,$4,$5,$6)
 
-
-
       ON CONFLICT(user_id)
 
       DO UPDATE SET
-
         diet = EXCLUDED.diet,
-
         cuisines = EXCLUDED.cuisines,
-
         allergies = EXCLUDED.allergies,
-
         cooking_skill = EXCLUDED.cooking_skill,
-
         cooking_time = EXCLUDED.cooking_time
-
       `,
-
-
       [
         // User this preference belongs to
         userId,
@@ -143,32 +119,111 @@ router.post("/", async (req, res) => {
         cuisines, // Array of selected cuisines
         allergies, // Array of allergies
         cookingSkill, // Beginner/intermediate/advanced
-        cookingTime // Maximum cooking time in minutes
-      ]
-
+        cookingTime, // Maximum cooking time in minutes
+      ],
     );
 
-    console.log(
-      "Preferences saved successfully"
-    );
+    console.log("Preferences saved successfully");
 
     // Send successful response back
     // to the React frontend.
     res.status(201).json({
-      message:"Preferences saved"
+      message: "Preferences saved",
     });
-  }
-
-
-  catch(error){
+  } catch (error) {
     // Log unexpected database/server errors
-    console.error(
-      "Preference save error:",
-      error
-    );
+    console.error("Preference save error:", error);
 
     res.status(500).json({
-      message:"Server error"
+      message: "Server error",
+    });
+  }
+});
+
+// ============================================
+// GET USER PREFERENCES
+// GET /preferences
+//
+// Returns the logged-in user's saved preferences
+// so the onboarding form can be pre-filled.
+// ============================================
+
+router.get("/", async (req, res) => {
+  try {
+    // Check if user is authenticated
+
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Not authenticated",
+      });
+    }
+
+    // Find the user's database UUID
+    const userResult = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE google_id = $1
+      `,
+
+      [req.user.googleId],
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // Retrieve saved preferences
+
+    const preferencesResult = await pool.query(
+      `
+      SELECT
+        diet,
+        cuisines,
+        allergies,
+        cooking_skill,
+        cooking_time
+
+      FROM preferences
+
+      WHERE user_id=$1
+
+      `,
+
+      [userId],
+    );
+
+    // No preferences saved yet
+
+    if (preferencesResult.rows.length === 0) {
+      return res.json(null);
+    }
+
+    const preferences = preferencesResult.rows[0];
+
+    // Convert database column names
+    // back to frontend naming style
+
+    res.json({
+      diet: preferences.diet || "",
+
+      cuisines: preferences.cuisines || [],
+
+      allergies: preferences.allergies || [],
+
+      cookingSkill: preferences.cooking_skill || "",
+
+      cookingTime: preferences.cooking_time || 30,
+    });
+  } catch (error) {
+    console.error("Get preferences error:", error);
+
+    res.status(500).json({
+      message: "Server error",
     });
   }
 });
