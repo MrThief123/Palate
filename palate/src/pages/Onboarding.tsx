@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Onboarding.css";
 
@@ -12,6 +12,29 @@ export default function Onboarding() {
     cookingSkill: "",
     cookingTime: 30,
   });
+
+  // Load saved preferences when updating profile
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const response = await fetch("http://localhost:5001/preferences", {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data) {
+            setPreferences(data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load preferences:", error);
+      }
+    }
+
+    loadPreferences();
+  }, []);
 
   const cuisines = [
     "Italian",
@@ -65,12 +88,7 @@ export default function Onboarding() {
 
   const skills = ["Beginner", "Intermediate", "Advanced"];
 
-  const times = [15, 30, 45, 60, 90];
-
-  function toggleArrayValue(
-    field: "cuisines" | "allergies",
-    value: string
-  ) {
+  function toggleArrayValue(field: "cuisines" | "allergies", value: string) {
     setPreferences((prev) => ({
       ...prev,
       [field]: prev[field].includes(value)
@@ -100,10 +118,12 @@ export default function Onboarding() {
     <div className="onboarding-page">
       <div className="onboarding-card">
         <h1>Welcome to Palate 🍴</h1>
+
         <p>Tell us what you like to eat</p>
 
         <form onSubmit={handleSubmit}>
           <label>Diet</label>
+
           <div className="options">
             {diets.map((item) => (
               <button
@@ -125,6 +145,7 @@ export default function Onboarding() {
           </div>
 
           <label>Favourite cuisines</label>
+
           <div className="options">
             {cuisines.map((item) => (
               <button
@@ -143,6 +164,7 @@ export default function Onboarding() {
           </div>
 
           <label>Allergies</label>
+
           <div className="options">
             {allergies.map((item) => (
               <button
@@ -161,6 +183,7 @@ export default function Onboarding() {
           </div>
 
           <label>Cooking skill</label>
+
           <div className="options">
             {skills.map((item) => (
               <button
@@ -183,45 +206,33 @@ export default function Onboarding() {
             ))}
           </div>
 
-<label>
-  Maximum cooking time
-</label>
+          <label>Maximum cooking time</label>
 
+          <div className="time-slider">
+            <div className="time-value">{preferences.cookingTime} minutes</div>
 
-<div className="time-slider">
+            <input
+              type="range"
+              min="10"
+              max="120"
+              step="5"
+              value={preferences.cookingTime}
+              onChange={(e) =>
+                setPreferences({
+                  ...preferences,
+                  cookingTime: Number(e.target.value),
+                })
+              }
+            />
 
-  <div className="time-value">
-    {preferences.cookingTime} minutes
-  </div>
-
-
-  <input
-    type="range"
-    min="10"
-    max="120"
-    step="5"
-    value={preferences.cookingTime}
-    onChange={(e) =>
-      setPreferences({
-        ...preferences,
-        cookingTime: Number(e.target.value),
-      })
-    }
-  />
-
-
-  <div className="slider-labels">
-
-    <span>10 min</span>
-
-    <span>2 hours</span>
-
-  </div>
-
-</div>
+            <div className="slider-labels">
+              <span>10 min</span>
+              <span>2 hours</span>
+            </div>
+          </div>
 
           <button className="submit-button" type="submit">
-            Start Cooking 🚀
+            Save Preferences 🚀
           </button>
         </form>
       </div>
