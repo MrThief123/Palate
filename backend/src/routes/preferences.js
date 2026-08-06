@@ -1,5 +1,6 @@
 import { Router } from "express";
 import pool from "../config/database.js";
+import { saveMemory } from "./memoryService.js";
 
 // Create router for preference-related endpoints
 const router = Router();
@@ -122,6 +123,69 @@ router.post("/", async (req, res) => {
         cookingTime, // Maximum cooking time in minutes
       ],
     );
+
+    // ============================================
+    // CREATE INITIAL USER MEMORIES
+    //
+    // These are generated from onboarding.
+    // ============================================
+
+    // Diet memory
+    if (diet) {
+      await saveMemory(userId, "diet", `User follows a ${diet} diet.`, {
+        source: "onboarding",
+      });
+    }
+
+    // Cuisine memories
+    if (cuisines && cuisines.length > 0) {
+      for (const cuisine of cuisines) {
+        await saveMemory(userId, "cuisine", `User enjoys ${cuisine} cuisine.`, {
+          source: "onboarding",
+        });
+      }
+    }
+
+    // Allergy memories
+    if (allergies && allergies.length > 0) {
+      for (const allergy of allergies) {
+        await saveMemory(
+          userId,
+          "allergy",
+          `User is allergic to ${allergy}.`,
+          {
+            source: "onboarding",
+          },
+          10,
+        );
+      }
+    }
+
+    // Cooking skill
+    if (cookingSkill) {
+      await saveMemory(
+        userId,
+        "skill",
+        `User has ${cookingSkill} cooking experience.`,
+        {
+          source: "onboarding",
+        },
+        7
+      );
+    }
+
+    // Cooking time
+    if (cookingTime) {
+      await saveMemory(
+        userId,
+        "cooking_time",
+        `User prefers meals under ${cookingTime} minutes.`,
+        {
+          source: "onboarding",
+        },
+        4
+      );
+    }
 
     console.log("Preferences saved successfully");
 
