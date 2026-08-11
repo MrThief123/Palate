@@ -1,6 +1,6 @@
 import { Router } from "express";
 import pool from "../config/database.js";
-import { saveMemory } from "./memoryService.js";
+import { saveMemory } from "../services/memoryService.js";
 
 // Create router for preference-related endpoints
 const router = Router();
