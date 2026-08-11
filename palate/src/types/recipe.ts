@@ -1,21 +1,17 @@
 export interface Recipe {
+  id: string;
+  name: string;
+  description: string;
 
-    id: string;
+  mealType: string;
+  cuisine: string;
+  difficulty: string;
 
-    name: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
 
-    cuisine: string;
-
-    mealType: string;
-
-    difficulty: string;
-
-    cookTime: number;
-
-    description: string;
-
-    ingredients: string[];
-
-    instructions: string[];
-
+  ingredients: string[];
+  instructions?: string[];
+  mainIngredients: string[];
 }
