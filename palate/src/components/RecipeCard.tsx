@@ -9,28 +9,32 @@ interface Props {
 export default function RecipeCard({ recipe }: Props) {
   return (
     <div className="recipe-card">
-      <h1 className="recipe-title">{recipe.name}</h1>
+
+      <h1 className="recipe-title">
+        {recipe.name}
+      </h1>
+
 
       <div className="recipe-meta">
         {recipe.cuisine}
-        <br />⏱ {recipe.cookTime} minutes
+        <br />
+        🍽 {recipe.mealType}
+        <br />
+        ⏱ {recipe.cookTime} minutes
         <br />
         Difficulty: {recipe.difficulty}
       </div>
 
-      <p className="recipe-description">{recipe.description}</p>
 
-      <div className="recipe-section">
-        <h3>Ingredients</h3>
+      <p className="recipe-description">
+        {recipe.description}
+      </p>
 
-        <ul>
-          {recipe.ingredients.map((ingredient) => (
-            <li key={ingredient}>{ingredient}</li>
-          ))}
-        </ul>
+
+      <div className="recipe-hint">
+        ← Skip &nbsp;&nbsp; ❤️ Cook →
       </div>
 
-      <div className="recipe-hint">← Skip &nbsp;&nbsp; ❤️ Cook →</div>
     </div>
   );
 }
