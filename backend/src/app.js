@@ -3,6 +3,7 @@ import cors from "cors";
 import session from "express-session";
 import passport from "./config/passport.js";
 import preferenceRoutes from "./routes/preferences.js";
+import recommendationRoutes from "./routes/recommendations.js";
 
 import authRoutes from "./routes/auth.js";
 
@@ -59,5 +60,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/preferences", preferenceRoutes);
+
+app.use("/recommendations", recommendationRoutes);
 
 export default app;
