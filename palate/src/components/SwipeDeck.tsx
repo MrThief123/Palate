@@ -13,9 +13,7 @@ type RecipesResponse = {
   message?: string;
 };
 
-export default function SwipeDeck({
-  mealType = "dinner",
-}: SwipeDeckProps) {
+export default function SwipeDeck({ mealType = "dinner" }: SwipeDeckProps) {
   const navigate = useNavigate();
 
   // ============================================
@@ -24,11 +22,6 @@ export default function SwipeDeck({
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Recipes the user has rejected.
-  // These will be sent to Bedrock when
-  // generating the next batch.
-  const [passedRecipes, setPassedRecipes] = useState<Recipe[]>([]);
 
   // ============================================
   // SWIPE STATE
@@ -54,35 +47,23 @@ export default function SwipeDeck({
       setGeneratingMore(true);
       setError(null);
 
-      console.log(
-        "[SwipeDeck] Generating more recipes..."
-      );
+      console.log("[SwipeDeck] Generating more recipes...");
 
-      console.log(
-        "[SwipeDeck] Passed recipes:",
-        passedRecipes
-      );
+      console.log("[SwipeDeck] Passed recipes:", passedRecipes);
 
-      const response = await fetch(
-        `http://localhost:5001/recommendations`,
-        {
-          method: "POST",
+      const response = await fetch(`http://localhost:5001/recommendations`, {
+        method: "POST",
 
-          credentials: "include",
+        credentials: "include",
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-          body: JSON.stringify({
-            mealType,
-
-            // Send the recipes the user rejected
-            // so the AI knows what NOT to recommend.
-            passedRecipes: passedRecipes.slice(-30),
-          }),
-        }
-      );
+        body: JSON.stringify({
+          mealType,
+        }),
+      });
 
       if (!response.ok) {
         let message = "Failed to generate recipes";
@@ -100,30 +81,18 @@ export default function SwipeDeck({
         throw new Error(message);
       }
 
-      const data: RecipesResponse =
-        await response.json();
+      const data: RecipesResponse = await response.json();
 
-      console.log(
-        "[SwipeDeck] New recipes:",
-        data.recipes
-      );
+      console.log("[SwipeDeck] New recipes:", data.recipes);
 
       if (!data.recipes || data.recipes.length === 0) {
-        throw new Error(
-          "AI did not return any recipes"
-        );
+        throw new Error("AI did not return any recipes");
       }
 
       // Add the new recipes to the existing deck.
-      setRecipes((prev) => [
-        ...prev,
-        ...data.recipes,
-      ]);
+      setRecipes((prev) => [...prev, ...data.recipes]);
     } catch (error: unknown) {
-      console.error(
-        "[SwipeDeck] Failed to generate more recipes:",
-        error
-      );
+      console.error("[SwipeDeck] Failed to generate more recipes:", error);
 
       if (error instanceof Error) {
         setError(error.message);
@@ -136,6 +105,47 @@ export default function SwipeDeck({
     }
   }
 
+  async function saveRecipeInteraction(
+    recipe: Recipe,
+    action: "liked" | "passed" | "cooked",
+    mealType: string,
+  ) {
+    try {
+      const response = await fetch(
+        "http://localhost:5001/recipe-interactions",
+        {
+          method: "POST",
+
+          credentials: "include",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            recipeId: recipe.id,
+            recipeName: recipe.name,
+            mealType,
+            cuisine: recipe.cuisine,
+            action,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+
+        throw new Error(data?.message || "Failed to save recipe interaction");
+      }
+
+      console.log("[SwipeDeck] Interaction saved:", action, recipe.name);
+    } catch (error) {
+      // We don't want a database failure
+      // to stop the swipe experience.
+      console.error("[SwipeDeck] Failed to save interaction:", error);
+    }
+  }
+
   // ============================================
   // INITIAL LOAD
   // ============================================
@@ -144,7 +154,6 @@ export default function SwipeDeck({
     // Reset everything when meal type changes.
 
     setRecipes([]);
-    setPassedRecipes([]);
     setCurrentIndex(0);
     setPosition(0);
 
@@ -164,35 +173,27 @@ export default function SwipeDeck({
   // POINTER DOWN
   // ============================================
 
-  function handlePointerDown(
-    e: React.PointerEvent<HTMLDivElement>
-  ) {
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     setDragging(true);
 
-    e.currentTarget.setPointerCapture(
-      e.pointerId
-    );
+    e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   // ============================================
   // POINTER MOVE
   // ============================================
 
-  function handlePointerMove(
-    e: React.PointerEvent<HTMLDivElement>
-  ) {
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!dragging) return;
 
-    setPosition(
-      e.clientX - window.innerWidth / 2
-    );
+    setPosition(e.clientX - window.innerWidth / 2);
   }
 
   // ============================================
   // POINTER UP
   // ============================================
 
-  function handlePointerUp() {
+  async function handlePointerUp() {
     setDragging(false);
 
     if (!recipe) {
@@ -204,10 +205,10 @@ export default function SwipeDeck({
     // ==========================================
 
     if (position > 120) {
-      console.log(
-        "[SwipeDeck] Liked:",
-        recipe.name
-      );
+      console.log("[SwipeDeck] Liked:", recipe.name);
+
+      // Persist the interaction in CockroachDB.
+      await saveRecipeInteraction(recipe, "liked", mealType);
 
       // Send the recipe to the cooking page.
       navigate(`/cooking/${recipe.id}`, {
@@ -226,17 +227,10 @@ export default function SwipeDeck({
     // ==========================================
 
     if (position < -120) {
-      console.log(
-        "[SwipeDeck] Passed:",
-        recipe.name
-      );
+      console.log("[SwipeDeck] Passed:", recipe.name);
 
-      // Store the rejected recipe.
-
-      setPassedRecipes((prev) => [
-        ...prev,
-        recipe,
-      ]);
+      // Persist the interaction in CockroachDB.
+      await saveRecipeInteraction(recipe, "passed", mealType);
 
       // Move to next recipe.
       nextRecipe();
@@ -262,9 +256,7 @@ export default function SwipeDeck({
       <div className="text-center">
         <h2>Finding recipes for you...</h2>
 
-        <p>
-          Palate is creating your recommendations.
-        </p>
+        <p>Palate is creating your recommendations.</p>
       </div>
     );
   }
@@ -273,23 +265,15 @@ export default function SwipeDeck({
   // ERROR
   // ============================================
 
-  if (
-    error &&
-    recipes.length === 0
-  ) {
+  if (error && recipes.length === 0) {
     return (
       <div className="text-center">
         <h2>Couldn't load recipes</h2>
 
         <p>{error}</p>
 
-        <button
-          onClick={fetchMoreRecipes}
-          disabled={generatingMore}
-        >
-          {generatingMore
-            ? "Generating..."
-            : "Try Again"}
+        <button onClick={fetchMoreRecipes} disabled={generatingMore}>
+          {generatingMore ? "Generating..." : "Try Again"}
         </button>
       </div>
     );
@@ -304,18 +288,10 @@ export default function SwipeDeck({
       <div className="text-center">
         <h2>No more recipes</h2>
 
-        <p>
-          You've gone through all the current
-          recommendations.
-        </p>
+        <p>You've gone through all the current recommendations.</p>
 
-        <button
-          onClick={fetchMoreRecipes}
-          disabled={generatingMore}
-        >
-          {generatingMore
-            ? "Finding more recipes..."
-            : "Find More Recipes"}
+        <button onClick={fetchMoreRecipes} disabled={generatingMore}>
+          {generatingMore ? "Finding more recipes..." : "Find More Recipes"}
         </button>
       </div>
     );
@@ -340,9 +316,7 @@ export default function SwipeDeck({
             rotate(${position / 20}deg)
           `,
 
-          transition: dragging
-            ? "none"
-            : "transform 0.3s ease",
+          transition: dragging ? "none" : "transform 0.3s ease",
 
           touchAction: "none",
         }}
@@ -353,9 +327,7 @@ export default function SwipeDeck({
       {/* Optional status while more recipes
           are being generated */}
       {generatingMore && (
-        <p className="text-center mt-4">
-          Finding more recipes...
-        </p>
+        <p className="text-center mt-4">Finding more recipes...</p>
       )}
     </div>
   );
