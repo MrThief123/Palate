@@ -9,12 +9,13 @@ const client = new BedrockRuntimeClient({
 
 const MODEL_ID = process.env.BEDROCK_MODEL_ID;
 
+
+
 export async function generateRecipes({
   preferences,
   memories,
   mealType,
   count = 10,
-  passedRecipes = [],
 }) {
   const preferenceContext = `
 Diet: ${preferences?.diet || "No specific diet"}
@@ -27,6 +28,16 @@ Maximum cooking time: ${
       : "Not specified"
   }
 `;
+
+  const interactionContext =
+    interactions.length > 0
+      ? interactions
+          .map(
+            (interaction) =>
+              `- ${interaction.action}: ${interaction.recipe_name} — ${interaction.cuisine || "Unknown cuisine"} — ${interaction.meal_type || "Unknown meal"}`
+          )
+          .join("\n")
+      : "No previous recipe interactions.";
 
   const memoryContext =
     memories.length > 0
@@ -70,13 +81,25 @@ IMPORTANT REQUIREMENTS:
 
 9. Do not include markdown or code fences.
 
-RECIPES THE USER HAS PASSED ON:
+USER RECIPE HISTORY:
 
-- Spicy Thai Basil Chicken — Thai — dinner
-- Creamy Mushroom Pasta — Italian — dinner
+The following interactions were retrieved from the user's
+persistent recipe history in CockroachDB.
 
-Avoid recommending these recipes again or generating
-recipes that are substantially similar to them.
+- "liked" means the user showed positive interest.
+- "passed" means the user rejected the recipe.
+- "cooked" means the user cooked the recipe.
+
+Use this history to personalise recommendations.
+
+Avoid recipes the user has already passed.
+
+Avoid recipes that are substantially similar to recipes
+the user has repeatedly passed.
+
+Prefer patterns associated with recipes the user has liked.
+
+${interactionContext}
 
 Return exactly this structure:
 

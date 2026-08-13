@@ -4,6 +4,7 @@ import session from "express-session";
 import passport from "./config/passport.js";
 import preferenceRoutes from "./routes/preferences.js";
 import recommendationRoutes from "./routes/recommendations.js";
+import recipeInteractionRoutes from "./routes/recipeInteractions.js";
 
 import authRoutes from "./routes/auth.js";
 
@@ -63,4 +64,5 @@ app.use("/preferences", preferenceRoutes);
 
 app.use("/recommendations", recommendationRoutes);
 
+app.use("/recipe-interactions", recipeInteractionRoutes);
 export default app;
