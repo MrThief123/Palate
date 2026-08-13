@@ -155,19 +155,6 @@ router.post("/", async (req, res) => {
       count: 10,
     });
 
-    const interactionContext =
-    interactions.length > 0
-      ? interactions
-          .map(
-            (interaction) =>
-              `- ${interaction.action}: ${interaction.recipe_name} — ${
-                interaction.cuisine || "Unknown cuisine"
-              } — ${
-                interaction.meal_type || "Unknown meal"
-              }`
-          )
-          .join("\n")
-      : "No previous recipe interactions.";
 
     // ==========================================
     // RETURN RECIPES
@@ -187,6 +174,157 @@ router.post("/", async (req, res) => {
     res.status(500).json({
       message:
         "Failed to generate recommendations",
+    });
+  }
+});
+
+// ============================================
+// SAVE COOKING FEEDBACK
+//
+// POST /recommendations/feedback
+//
+// User has cooked a recipe and provides:
+// - rating
+// - optional written feedback
+//
+// This is stored as persistent behavioural
+// memory in recipe_interactions.
+// ============================================
+
+router.post("/feedback", async (req, res) => {
+  try {
+    // ==========================================
+    // CHECK AUTHENTICATION
+    // ==========================================
+
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Not authenticated",
+      });
+    }
+
+    // ==========================================
+    // GET REQUEST DATA
+    // ==========================================
+
+    const {
+      recipeId,
+      recipeName,
+      mealType,
+      cuisine,
+      rating,
+      feedback,
+    } = req.body;
+
+    if (
+      !recipeId ||
+      !recipeName ||
+      !rating
+    ) {
+      return res.status(400).json({
+        message:
+          "Recipe and rating are required",
+      });
+    }
+
+    // ==========================================
+    // VALIDATE RATING
+    // ==========================================
+
+    if (
+      !Number.isInteger(rating) ||
+      rating < 1 ||
+      rating > 5
+    ) {
+      return res.status(400).json({
+        message:
+          "Rating must be between 1 and 5",
+      });
+    }
+
+    // ==========================================
+    // FIND INTERNAL USER UUID
+    // ==========================================
+
+    const userResult = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE google_id = $1
+      `,
+      [req.user.googleId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // ==========================================
+    // SAVE COOKED RECIPE + FEEDBACK
+    // ==========================================
+
+    const result = await pool.query(
+      `
+      INSERT INTO recipe_interactions
+      (
+        user_id,
+        recipe_id,
+        recipe_name,
+        meal_type,
+        cuisine,
+        action,
+        rating,
+        feedback
+      )
+
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+      )
+
+      RETURNING *
+      `,
+      [
+        userId,
+        recipeId,
+        recipeName,
+        mealType || null,
+        cuisine || null,
+        "cooked",
+        rating,
+        feedback || null,
+      ]
+    );
+
+    console.log(
+      "[Feedback] Saved:",
+      result.rows[0]
+    );
+
+    res.status(201).json({
+      message: "Feedback saved",
+      interaction: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error(
+      "[Feedback] Error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to save feedback",
     });
   }
 });
