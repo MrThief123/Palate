@@ -33,10 +33,23 @@ Maximum cooking time: ${
   const interactionContext =
     interactions.length > 0
       ? interactions
-          .map(
-            (interaction) =>
-              `- ${interaction.action}: ${interaction.recipe_name} — ${interaction.cuisine || "Unknown cuisine"} — ${interaction.meal_type || "Unknown meal"}`
-          )
+          .map((interaction) => {
+            const ratingText = interaction.rating
+              ? ` | Rating: ${interaction.rating}/5`
+              : "";
+
+            const feedbackText = interaction.feedback
+              ? ` | Feedback: "${interaction.feedback}"`
+              : "";
+
+            return `- ${interaction.action}: ${
+              interaction.recipe_name
+            } — ${
+              interaction.cuisine || "Unknown cuisine"
+            } — ${
+              interaction.meal_type || "Unknown meal"
+            }${ratingText}${feedbackText}`;
+          })
           .join("\n")
       : "No previous recipe interactions.";
 
@@ -92,6 +105,26 @@ persistent recipe history in CockroachDB.
 - "cooked" means the user cooked the recipe.
 
 Use this history to personalise recommendations.
+
+Pay particular attention to:
+- recipes the user passed
+- recipes the user cooked
+- high ratings
+- low ratings
+- written feedback
+- repeated patterns across feedback
+
+Use positive feedback to identify recipes, cuisines,
+ingredients, flavours, cooking styles, and difficulty
+levels the user enjoys.
+
+Use negative feedback to avoid recipes, ingredients,
+flavours, cooking styles, or characteristics the user
+dislikes.
+
+Do not blindly copy previous recipes. Generalise
+patterns from the user's feedback to create new
+recommendations.
 
 Avoid recipes the user has already passed.
 
