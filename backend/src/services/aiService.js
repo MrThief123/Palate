@@ -14,6 +14,7 @@ const MODEL_ID = process.env.BEDROCK_MODEL_ID;
 export async function generateRecipes({
   preferences,
   memories,
+  interactions = [],
   mealType,
   count = 10,
 }) {

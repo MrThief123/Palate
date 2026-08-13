@@ -186,7 +186,7 @@ router.get("/", async (req, res) => {
 
       WHERE user_id = $1
 
-      ORDER BY created_at DESC
+      limit 20
       `,
       [userId],
     );

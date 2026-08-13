@@ -49,8 +49,6 @@ export default function SwipeDeck({ mealType = "dinner" }: SwipeDeckProps) {
 
       console.log("[SwipeDeck] Generating more recipes...");
 
-      console.log("[SwipeDeck] Passed recipes:", passedRecipes);
-
       const response = await fetch(`http://localhost:5001/recommendations`, {
         method: "POST",
 

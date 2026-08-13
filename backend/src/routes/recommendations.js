@@ -2,6 +2,9 @@ import { Router } from "express";
 import pool from "../config/database.js";
 
 import { getMemories } from "../services/memoryService.js";
+import {
+  getRecipeInteractions,
+} from "../services/recipeInteractionService.js";
 
 import {
   generateRecipes,
@@ -49,7 +52,6 @@ router.post("/", async (req, res) => {
 
     const {
       mealType = "dinner",
-      passedRecipes = [],
     } = req.body;
 
     const validMeals = [
@@ -122,6 +124,8 @@ router.post("/", async (req, res) => {
 
     const memories = await getMemories(userId);
 
+    const interactions = await getRecipeInteractions(userId);
+
     // ==========================================
     // LIMIT PASSED RECIPES
     //
@@ -129,19 +133,13 @@ router.post("/", async (req, res) => {
     // rejected recipes to Bedrock.
     // ==========================================
 
-    const recentPassedRecipes =
-      Array.isArray(passedRecipes)
-        ? passedRecipes.slice(-30)
-        : [];
-
     console.log(
       "[Recommendations] Generating recipes:",
       {
         userId,
         mealType,
         memoryCount: memories.length,
-        passedRecipeCount:
-          recentPassedRecipes.length,
+        interactionCount: interactions.length,
       }
     );
 
@@ -152,13 +150,24 @@ router.post("/", async (req, res) => {
     const recipes = await generateRecipes({
       preferences,
       memories,
+      interactions,
       mealType,
       count: 10,
-
-      // Tell the AI what the user already
-      // rejected.
-      passedRecipes: recentPassedRecipes,
     });
+
+    const interactionContext =
+    interactions.length > 0
+      ? interactions
+          .map(
+            (interaction) =>
+              `- ${interaction.action}: ${interaction.recipe_name} — ${
+                interaction.cuisine || "Unknown cuisine"
+              } — ${
+                interaction.meal_type || "Unknown meal"
+              }`
+          )
+          .join("\n")
+      : "No previous recipe interactions.";
 
     // ==========================================
     // RETURN RECIPES
@@ -241,6 +250,17 @@ router.post("/cooking", async (req, res) => {
     // ==========================================
 
     const memories = await getMemories(userId);
+
+    // ==========================================
+    // GET PERSISTENT RECIPE INTERACTIONS
+    //
+    // These are retrieved directly from
+    // CockroachDB instead of relying on
+    // frontend state.
+    // ==========================================
+
+    const interactions =
+  await getRecipeInteractions(userId);
 
     // ==========================================
     // GET USER PREFERENCES
