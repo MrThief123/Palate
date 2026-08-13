@@ -205,9 +205,6 @@ export default function SwipeDeck({ mealType = "dinner" }: SwipeDeckProps) {
     if (position > 120) {
       console.log("[SwipeDeck] Liked:", recipe.name);
 
-      // Persist the interaction in CockroachDB.
-      await saveRecipeInteraction(recipe, "liked", mealType);
-
       // Send the recipe to the cooking page.
       navigate(`/cooking/${recipe.id}`, {
         state: {

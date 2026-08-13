@@ -65,7 +65,10 @@ export default function Cooking() {
 
         const data = await response.json();
 
-        setDetailedRecipe(data.recipe);
+        setDetailedRecipe({
+          ...recipe,
+          ...data.recipe,
+        });
       } catch (err) {
         console.error(err);
 
@@ -240,9 +243,11 @@ export default function Cooking() {
 
       <button
         onClick={() =>
-          navigate(
-            `/feedback/${detailedRecipe.id}`
-          )
+          navigate(`/feedback/${detailedRecipe.id}`, {
+            state: {
+              recipe: detailedRecipe,
+            },
+          })
         }
         className="mt-10 w-full bg-black text-white px-5 py-3 rounded-xl"
       >
