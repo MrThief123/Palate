@@ -2,6 +2,9 @@ import { Router } from "express";
 import pool from "../config/database.js";
 
 import { getMemories } from "../services/memoryService.js";
+import {
+  getRecipeInteractions,
+} from "../services/recipeInteractionService.js";
 
 import {
   generateRecipes,
@@ -49,7 +52,6 @@ router.post("/", async (req, res) => {
 
     const {
       mealType = "dinner",
-      passedRecipes = [],
     } = req.body;
 
     const validMeals = [
@@ -122,6 +124,8 @@ router.post("/", async (req, res) => {
 
     const memories = await getMemories(userId);
 
+    const interactions = await getRecipeInteractions(userId);
+
     // ==========================================
     // LIMIT PASSED RECIPES
     //
@@ -129,19 +133,13 @@ router.post("/", async (req, res) => {
     // rejected recipes to Bedrock.
     // ==========================================
 
-    const recentPassedRecipes =
-      Array.isArray(passedRecipes)
-        ? passedRecipes.slice(-30)
-        : [];
-
     console.log(
       "[Recommendations] Generating recipes:",
       {
         userId,
         mealType,
         memoryCount: memories.length,
-        passedRecipeCount:
-          recentPassedRecipes.length,
+        interactionCount: interactions.length,
       }
     );
 
@@ -152,13 +150,11 @@ router.post("/", async (req, res) => {
     const recipes = await generateRecipes({
       preferences,
       memories,
+      interactions,
       mealType,
       count: 10,
-
-      // Tell the AI what the user already
-      // rejected.
-      passedRecipes: recentPassedRecipes,
     });
+
 
     // ==========================================
     // RETURN RECIPES
@@ -178,6 +174,103 @@ router.post("/", async (req, res) => {
     res.status(500).json({
       message:
         "Failed to generate recommendations",
+    });
+  }
+});
+
+// ============================================
+// SAVE COOKING FEEDBACK
+//
+// POST /recommendations/feedback
+//
+// User has cooked a recipe and provides:
+// - rating
+// - optional written feedback
+//
+// This is stored as persistent behavioural
+// memory in recipe_interactions.
+// ============================================
+
+router.post("/feedback", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Not authenticated",
+      });
+    }
+
+    const {
+      recipeId,
+      recipeName,
+      mealType,
+      cuisine,
+      rating,
+      feedback,
+    } = req.body;
+
+    if (!recipeId || !recipeName || !rating) {
+      return res.status(400).json({
+        message: "Recipe and rating are required",
+      });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        message: "Rating must be between 1 and 5",
+      });
+    }
+
+    const userResult = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE google_id = $1
+      `,
+      [req.user.googleId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    await pool.query(
+      `
+      INSERT INTO recipe_interactions (
+        user_id,
+        recipe_id,
+        recipe_name,
+        meal_type,
+        cuisine,
+        action,
+        rating,
+        feedback
+      )
+      VALUES ($1, $2, $3, $4, $5, 'cooked', $6, $7)
+      `,
+      [
+        userId,
+        recipeId,
+        recipeName,
+        mealType,
+        cuisine,
+        rating,
+        feedback?.trim() || null,
+      ]
+    );
+
+    res.json({
+      message: "Feedback saved successfully",
+    });
+
+  } catch (error) {
+    console.error("[Feedback] Error:", error);
+
+    res.status(500).json({
+      message: "Failed to save feedback",
     });
   }
 });
@@ -241,6 +334,17 @@ router.post("/cooking", async (req, res) => {
     // ==========================================
 
     const memories = await getMemories(userId);
+
+    // ==========================================
+    // GET PERSISTENT RECIPE INTERACTIONS
+    //
+    // These are retrieved directly from
+    // CockroachDB instead of relying on
+    // frontend state.
+    // ==========================================
+
+    const interactions =
+  await getRecipeInteractions(userId);
 
     // ==========================================
     // GET USER PREFERENCES
