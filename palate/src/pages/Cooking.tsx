@@ -24,12 +24,25 @@ export default function Cooking() {
 
   const recipe = location.state?.recipe as Recipe | undefined;
 
-  const [detailedRecipe, setDetailedRecipe] =
-    useState<DetailedRecipe | null>(null);
+  const [detailedRecipe, setDetailedRecipe] = useState<DetailedRecipe | null>(
+    null,
+  );
 
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
+
+  // ============================================
+  // CACHE KEY
+  //
+  // Each recipe gets its own cached version.
+  // ============================================
+
+  const cacheKey = recipe ? `palate-cooking-${recipe.id}` : null;
+
+  // ============================================
+  // GENERATE / LOAD RECIPE
+  // ============================================
 
   useEffect(() => {
     async function generateRecipe() {
@@ -39,7 +52,39 @@ export default function Cooking() {
         return;
       }
 
+      // ==========================================
+      // CHECK SESSION STORAGE FIRST
+      // ==========================================
+
+      const cachedRecipe = cacheKey ? sessionStorage.getItem(cacheKey) : null;
+
+      if (cachedRecipe) {
+        try {
+          const parsedRecipe = JSON.parse(cachedRecipe) as DetailedRecipe;
+
+          console.log("[Cooking] Loading cached recipe:", parsedRecipe.name);
+
+          setDetailedRecipe(parsedRecipe);
+          setLoading(false);
+
+          return;
+        } catch (error) {
+          console.error("[Cooking] Failed to parse cached recipe:", error);
+
+          // Remove corrupted cache
+          if (cacheKey) {
+            sessionStorage.removeItem(cacheKey);
+          }
+        }
+      }
+
+      // ==========================================
+      // NO CACHE → GENERATE RECIPE
+      // ==========================================
+
       try {
+        console.log("[Cooking] Generating recipe:", recipe.name);
+
         const response = await fetch(
           "http://localhost:5001/recommendations/cooking",
           {
@@ -54,46 +99,63 @@ export default function Cooking() {
             body: JSON.stringify({
               recipe,
             }),
-          }
+          },
         );
 
         if (!response.ok) {
-          throw new Error(
-            "Failed to generate recipe"
-          );
+          throw new Error("Failed to generate recipe");
         }
 
         const data = await response.json();
 
-        setDetailedRecipe({
+        // Combine the original lightweight recipe
+        // with the generated ingredients/instructions.
+        const generatedRecipe: DetailedRecipe = {
           ...recipe,
           ...data.recipe,
-        });
+        };
+
+        // ========================================
+        // SAVE TO REACT STATE
+        // ========================================
+
+        setDetailedRecipe(generatedRecipe);
+
+        // ========================================
+        // SAVE TO SESSION STORAGE
+        //
+        // This prevents regeneration when the
+        // user navigates away and comes back.
+        // ========================================
+
+        if (cacheKey) {
+          sessionStorage.setItem(cacheKey, JSON.stringify(generatedRecipe));
+        }
+
+        console.log(
+          "[Cooking] Recipe generated and cached:",
+          generatedRecipe.name,
+        );
       } catch (err) {
         console.error(err);
 
-        setError(
-          "Something went wrong generating the recipe."
-        );
+        setError("Something went wrong generating the recipe.");
       } finally {
         setLoading(false);
       }
     }
 
     generateRecipe();
-  }, [recipe]);
+  }, [recipe, cacheKey]);
 
-
-  // ------------------------------------------
-  // Recipe wasn't passed from Discover
-  // ------------------------------------------
+  // ============================================
+  // RECIPE NOT FOUND
+  // ============================================
 
   if (!recipe) {
     return (
       <div className="p-10 max-w-xl mx-auto">
-        <h1 className="text-2xl font-bold">
-          Recipe not found
-        </h1>
+        <h1 className="text-2xl font-bold">Recipe not found</h1>
 
         <button
           onClick={() => navigate("/discover")}
@@ -105,40 +167,30 @@ export default function Cooking() {
     );
   }
 
-
-  // ------------------------------------------
-  // Loading
-  // ------------------------------------------
+  // ============================================
+  // LOADING
+  // ============================================
 
   if (loading) {
     return (
       <div className="p-10 max-w-xl mx-auto">
-        <h1 className="text-4xl font-bold">
-          {recipe.name}
-        </h1>
+        <h1 className="text-4xl font-bold">{recipe.name}</h1>
 
-        <p className="mt-5 text-gray-500">
-          Preparing your recipe...
-        </p>
+        <p className="mt-5 text-gray-500">Preparing your recipe...</p>
       </div>
     );
   }
 
-
-  // ------------------------------------------
-  // Error
-  // ------------------------------------------
+  // ============================================
+  // ERROR
+  // ============================================
 
   if (error || !detailedRecipe) {
     return (
       <div className="p-10 max-w-xl mx-auto">
-        <h1 className="text-2xl font-bold">
-          Something went wrong
-        </h1>
+        <h1 className="text-2xl font-bold">Something went wrong</h1>
 
-        <p className="mt-3 text-gray-500">
-          {error}
-        </p>
+        <p className="mt-3 text-gray-500">{error}</p>
 
         <button
           onClick={() => navigate("/discover")}
@@ -150,94 +202,53 @@ export default function Cooking() {
     );
   }
 
-
-  // ------------------------------------------
-  // Full recipe
-  // ------------------------------------------
+  // ============================================
+  // FULL RECIPE
+  // ============================================
 
   return (
     <div className="p-10 max-w-xl mx-auto">
+      <h1 className="text-4xl font-bold">{detailedRecipe.name}</h1>
 
-      <h1 className="text-4xl font-bold">
-        {detailedRecipe.name}
-      </h1>
-
-      <p className="mt-3 text-gray-600">
-        {detailedRecipe.description}
-      </p>
-
+      <p className="mt-3 text-gray-600">{detailedRecipe.description}</p>
 
       {/* Metadata */}
 
       <div className="mt-5 flex gap-4 text-sm text-gray-600">
-        <span>
-          ⏱ {detailedRecipe.cookTime} min
-        </span>
+        <span>⏱ {detailedRecipe.cookTime} min</span>
 
-        <span>
-          👨‍🍳 {detailedRecipe.difficulty}
-        </span>
+        <span>👨‍🍳 {detailedRecipe.difficulty}</span>
 
-        <span>
-          🍽 {detailedRecipe.servings} servings
-        </span>
+        <span>🍽 {detailedRecipe.servings} servings</span>
       </div>
-
 
       {/* Ingredients */}
 
       <section className="mt-8">
-
-        <h2 className="text-xl font-bold">
-          Ingredients
-        </h2>
+        <h2 className="text-xl font-bold">Ingredients</h2>
 
         <ul className="mt-3 list-disc pl-5 space-y-2">
-
-          {detailedRecipe.ingredients.map(
-            (ingredient, index) => (
-              <li key={index}>
-                {ingredient}
-              </li>
-            )
-          )}
-
+          {detailedRecipe.ingredients.map((ingredient, index) => (
+            <li key={index}>{ingredient}</li>
+          ))}
         </ul>
-
       </section>
-
 
       {/* Instructions */}
 
       <section className="mt-8">
-
-        <h2 className="text-xl font-bold">
-          Instructions
-        </h2>
+        <h2 className="text-xl font-bold">Instructions</h2>
 
         <ol className="mt-3 space-y-5">
+          {detailedRecipe.instructions.map((instruction, index) => (
+            <li key={index} className="flex gap-4">
+              <span className="font-bold">{index + 1}.</span>
 
-          {detailedRecipe.instructions.map(
-            (instruction, index) => (
-              <li
-                key={index}
-                className="flex gap-4"
-              >
-                <span className="font-bold">
-                  {index + 1}.
-                </span>
-
-                <span>
-                  {instruction}
-                </span>
-              </li>
-            )
-          )}
-
+              <span>{instruction}</span>
+            </li>
+          ))}
         </ol>
-
       </section>
-
 
       {/* Finished */}
 
@@ -253,7 +264,6 @@ export default function Cooking() {
       >
         Finished Cooking
       </button>
-
     </div>
   );
 }

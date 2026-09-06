@@ -193,19 +193,11 @@ router.post("/", async (req, res) => {
 
 router.post("/feedback", async (req, res) => {
   try {
-    // ==========================================
-    // CHECK AUTHENTICATION
-    // ==========================================
-
     if (!req.user) {
       return res.status(401).json({
         message: "Not authenticated",
       });
     }
-
-    // ==========================================
-    // GET REQUEST DATA
-    // ==========================================
 
     const {
       recipeId,
@@ -216,35 +208,17 @@ router.post("/feedback", async (req, res) => {
       feedback,
     } = req.body;
 
-    if (
-      !recipeId ||
-      !recipeName ||
-      !rating
-    ) {
+    if (!recipeId || !recipeName || !rating) {
       return res.status(400).json({
-        message:
-          "Recipe and rating are required",
+        message: "Recipe and rating are required",
       });
     }
 
-    // ==========================================
-    // VALIDATE RATING
-    // ==========================================
-
-    if (
-      !Number.isInteger(rating) ||
-      rating < 1 ||
-      rating > 5
-    ) {
+    if (rating < 1 || rating > 5) {
       return res.status(400).json({
-        message:
-          "Rating must be between 1 and 5",
+        message: "Rating must be between 1 and 5",
       });
     }
-
-    // ==========================================
-    // FIND INTERNAL USER UUID
-    // ==========================================
 
     const userResult = await pool.query(
       `
@@ -263,14 +237,9 @@ router.post("/feedback", async (req, res) => {
 
     const userId = userResult.rows[0].id;
 
-    // ==========================================
-    // SAVE COOKED RECIPE + FEEDBACK
-    // ==========================================
-
-    const result = await pool.query(
+    await pool.query(
       `
-      INSERT INTO recipe_interactions
-      (
+      INSERT INTO recipe_interactions (
         user_id,
         recipe_id,
         recipe_name,
@@ -280,48 +249,25 @@ router.post("/feedback", async (req, res) => {
         rating,
         feedback
       )
-
-      VALUES
-      (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8
-      )
-
-      RETURNING *
+      VALUES ($1, $2, $3, $4, $5, 'cooked', $6, $7)
       `,
       [
         userId,
         recipeId,
         recipeName,
-        mealType || null,
-        cuisine || null,
-        "cooked",
+        mealType,
+        cuisine,
         rating,
-        feedback || null,
+        feedback?.trim() || null,
       ]
     );
 
-    console.log(
-      "[Feedback] Saved:",
-      result.rows[0]
-    );
-
-    res.status(201).json({
-      message: "Feedback saved",
-      interaction: result.rows[0],
+    res.json({
+      message: "Feedback saved successfully",
     });
 
   } catch (error) {
-    console.error(
-      "[Feedback] Error:",
-      error
-    );
+    console.error("[Feedback] Error:", error);
 
     res.status(500).json({
       message: "Failed to save feedback",
