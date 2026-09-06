@@ -6,6 +6,10 @@
 
 Instead of repeatedly searching for recipes and filtering through hundreds of irrelevant results, Palate uses **persistent user memory** to understand your tastes, cooking ability, available time, dietary requirements, and previous interactions — creating an increasingly personalised recipe experience.
 
+<div align="center">
+  <img src="image.png" alt="Plate UI" width="500">
+</div>
+
 ---
 
 ## ✨ Features
